@@ -1,135 +1,110 @@
+/* eslint-disable no-undef */
 const db = require("../models")
+const {StatusCodes} = require("http-status-codes");
+const { createTutorials, getAllTutorials, getTutorialsById, updateTutorial, deleteTutorial } = require("../services/tutorials");
+const BadRequestError = require("../errors/bad-request");
 const Tutorial = db.tutorials
 
 // create and save a new tutorial
-exports.create = (req,res) => {
-    //validate request
-    if(!req.body.title){
-        res.status(400).send({message: "Content cannot be empty"})
-        return;
-    }
-
-    // create a new tutorial
-    const tutorial = new Tutorial({
-        title: req.body.title,
-        description : req.body.description,
-        published: req.body.published ? req.body.published : false
-    })
-
-    //save tutorial in the database
-    tutorial
-        .save(tutorial)
-        .then(data => {
-            res.send(data)
-        }) 
-        .catch(err => {
-            res.status(500).send({
-                message: 
-                    err.message || "Some error occured while creating the tutorial"
-            })
-        })
-};
-
-// retrieve all tutorials from the database
-exports.findAll = (req, res) => {
-    const title = req.query.title;
-    var condition = title ? {title: { $regex: new RegExp(title), $options: "i"}} : {};
-
-    Tutorial.find(condition)
-        .then(data => {
-            res.send(data);
-        })
-        .catch(err => {
-            res.status(500).send({
-                message:
-                    err.message || "Some error occured while retrieving tutorials"
+const create = async (req, res, next) => {
+    try {
+        const data = await createTutorials(req);
+        res.status(StatusCodes.OK).send({
+            status: StatusCodes.OK,
+            msg: "Tutorials created successfully!",
+            data: data,
+        });
+    } catch (error) {
+        if (error instanceof BadRequestError) {
+            // Handle BadRequestError
+            res.status(StatusCodes.BAD_REQUEST).send({
+                status: StatusCodes.BAD_REQUEST,
+                msg: error.message,
             });
-        });
-};
-
-// find a single Tutorial with an ID
-exports.findOne = (req,res) => {
-    const id = req.params.id;
-
-    Tutorial.findById(id)
-        .then(data => {
-            if(!data)
-                res.status(404).send({message: "not found tutorial with id " + id});
-            else res.send(data)
-        })
-        .catch(err => {
-            res
-                .status(500)
-                .send({message : "Error retrieving tutorial with id=" + id});
-        });
+        } else {
+            // Handle other errors
+            next(error);
+        }
+    }
 };
 
 // update a tutorial by the id in the request
-exports.update = (req,res) => {
-    if(!req.body){
-        return res.status(400).send({
-            message: "Data to update can not be empty"
+const updateTutorialItem = async (req, res, next) => {
+     try {
+        const data = await updateTutorial(req);
+        res.status(StatusCodes.OK).send({
+            status: StatusCodes.OK,
+            msg: "OK",
+            data: data,
         });
-    };
-
-    const id = req.params.id;
-
-    Tutorial.findByIdAndUpdate(id, req.body, {useFindAndModify: false})
-        .then(data => {
-            if(!data){
-                res.status(404).send({
-                    message: `cannot update tutorial with id=${id}. Maybe tutorial was not found`
-                })
-            } else res.send({message: "tutorial was updated succesfully"})
-        })
-        .catch(err => {
-            res.status(500).send({
-                message: 'error updating tutorial with id='+ id
+    } catch (error) {
+        if (error instanceof BadRequestError) {
+            // Handle BadRequestError
+            res.status(StatusCodes.BAD_REQUEST).send({
+                status: StatusCodes.BAD_REQUEST,
+                msg: error.message,
             });
-        });
-
+        } else {
+            // Handle other errors
+            next(error);
+        }
+    }
 };
 
-// delete a tutorial by the id in the request
-exports.delete = (req,res) => {
-    const id = req.params.id;
 
-    Tutorial.findByIdAndRemove(id)
-        .then(data =>{ 
-            if(!data) {
-                res.status(404).send({
-                    message: `cannot delete tutorial with id=${id}. Maybe tutorial was not found`
-                })
-            }else{
-                res.send({
-                    message: "tutorial was deleted succesfully"
-                })
-            }
-        })
-        .catch(err => {
-            res.status(500).send({
-                message: "Could not delete tutorial with id=" + id
-            })
-        })
-}
-
-exports.deleteAll = (req,res) => {
-    Tutorial.deleteMany({})
-        .then(data => {
-            res.send({
-                message: `${data.deletedCount} Tutorials were deleted succesfully`
+// retrieve all tutorials from the database
+const findAllTutorials = async (req, res, next) => {
+     try {
+        const data = await getAllTutorials(req);
+        res.status(StatusCodes.OK).send({
+            status: StatusCodes.OK,
+            msg: "OK",
+            data: data,
+        });
+    } catch (error) {
+        if (error instanceof BadRequestError) {
+            // Handle BadRequestError
+            res.status(StatusCodes.BAD_REQUEST).send({
+                status: StatusCodes.BAD_REQUEST,
+                msg: error.message,
             });
-        })
-        .catch(err => {
-            res.status(500).send({
-                message:
-                    err.message || "Some error occured while removing all tutorials"
-            })
-        })
-}
+        } else {
+            // Handle other errors
+            next(error);
+        }
+    }
+   
+};
+
+// find a single Tutorial with an ID
+const findTutorialsById = async (req, res, next) => {
+    try {
+        const data = await getTutorialsById(req);
+        res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            msg: "OK",
+            data: data,
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+const deleteTutorialById = async (req, res, next) => {
+    try {
+        const data = await deleteTutorial(req);
+        res.status(StatusCodes.OK).send({
+            status: StatusCodes.OK,
+            msg: "OK",
+            data: data,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 // find all published tutorials
-exports.findAllPublished = (req,res) => {
+const findAllPublished = (req,res) => {
     Tutorial.find({published: true})
         .then(data => {
             res.send(data);
@@ -140,4 +115,13 @@ exports.findAllPublished = (req,res) => {
                     err.message || "Some error occured while retrieving tutorials"
             })
         })
+}
+
+module.exports = {
+    create,
+    findAllTutorials,
+    findTutorialsById,
+    updateTutorialItem,
+    deleteTutorialById,
+    findAllPublished
 }

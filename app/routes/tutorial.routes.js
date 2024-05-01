@@ -1,27 +1,24 @@
+/* eslint-disable no-undef */
+const {create, findAllTutorials, findTutorialsById, updateTutorialItem, deleteTutorialById} = require("./../controllers/tutorial.controller.js")
+
+
 module.exports = app => {
-    const tutorials = require('../controllers/tutorial.controller.js')
     var router = require("express").Router();
 
     // create a new tutorial
-    router.post("/", tutorials.create)
-
-    // retrieve all tutorials
-    router.get("/", tutorials.findAll)
-
-    // retrieve all published tutorials
-    router.get("/published", tutorials.findAllPublished)
-
-    // retrieve a single tutorial with ID
-    router.get("/:id", tutorials.findOne)
+    router.post("/", create)
 
     // update a tutorial with id
-    router.put("/:id", tutorials.update)
+    router.put("/:id", updateTutorialItem)
 
-    // delete a tutorial with id
-    router.delete("/:id", tutorials.delete)
+    // retrieve all tutorials
+    router.get("/", findAllTutorials)
 
-    // delete all tutorials
-    router.delete("/", tutorials.deleteAll)
+    // retrieve tutorials by id
+    router.get("/:id", findTutorialsById)
+
+    // delete tutorials
+    router.delete("/:id", deleteTutorialById)
 
     app.use('/api/tutorials', router)
 
